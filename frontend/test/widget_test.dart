@@ -18,3 +18,4 @@ void main() {
     expect(find.byType(OpAmpLabApp), findsOneWidget);
   });
 }
+
