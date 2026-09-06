@@ -14,7 +14,9 @@ class AuthProvider extends ChangeNotifier {
   bool initialized = false;
 
   AuthProvider({AuthService? authService})
-      : _authService = authService ?? AuthService();
+      : _authService = authService ?? AuthService() {
+    tryAutoLogin();
+  }
 
   bool get isAuthenticated => user != null && token != null;
 
