@@ -22,6 +22,9 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+// Keep the legacy path working for frontend builds made before the /api prefix
+// was added.
+app.use('/auth', authRoutes);
 app.use('/api/experiments', experimentRoutes);
 
 app.use(notFoundHandler);
