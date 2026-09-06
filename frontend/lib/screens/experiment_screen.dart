@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,6 +30,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   late SimulationResult _result;
   bool _isSaving = false;
   String? _saveMessage;
+  bool _controlsOpen = false;
 
   @override
   void initState() {
@@ -105,7 +108,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
 
   Widget _content() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -118,6 +121,82 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
           InfoSection(config: widget.config),
         ],
       ),
+    );
+  }
+
+  Widget _controls() {
+    return ControlPanel(
+      params: _params,
+      onChanged: (params) {
+        setState(() {
+          _params = params;
+          _result = _run();
+          _saveMessage = null;
+        });
+      },
+      onRunPressed: _recompute,
+      onSavePressed: _saveRun,
+      isSaving: _isSaving,
+      saveMessage: _saveMessage,
+    );
+  }
+
+  Widget _mobileLayout() {
+    final drawerWidth = math.min(360.0, MediaQuery.sizeOf(context).width * .9);
+
+    return Stack(
+      children: [
+        Positioned.fill(child: _content()),
+        if (_controlsOpen)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => setState(() => _controlsOpen = false),
+              child: const ColoredBox(color: Colors.black26),
+            ),
+          ),
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          left: _controlsOpen ? 0 : -drawerWidth,
+          top: 0,
+          bottom: 0,
+          width: drawerWidth,
+          child: Material(
+            elevation: 12,
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SafeArea(
+              right: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 24),
+                child: _controls(),
+              ),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Material(
+                color: Theme.of(context).colorScheme.primary,
+                borderRadius: BorderRadius.circular(14),
+                elevation: 5,
+                child: IconButton(
+                  tooltip: _controlsOpen ? 'Close controls' : 'Open controls',
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  onPressed: () =>
+                      setState(() => _controlsOpen = !_controlsOpen),
+                  icon: AnimatedIcon(
+                    icon: AnimatedIcons.menu_close,
+                    progress: AlwaysStoppedAnimation(_controlsOpen ? 1 : 0),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -156,25 +235,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
             );
           }
 
-          return Column(
-            children: [
-              ControlPanel(
-                params: _params,
-                onChanged: (params) {
-                  setState(() {
-                    _params = params;
-                    _result = _run();
-                    _saveMessage = null;
-                  });
-                },
-                onRunPressed: _recompute,
-                onSavePressed: _saveRun,
-                isSaving: _isSaving,
-                saveMessage: _saveMessage,
-              ),
-              Expanded(child: _content()),
-            ],
-          );
+          return _mobileLayout();
         },
       ),
     );
