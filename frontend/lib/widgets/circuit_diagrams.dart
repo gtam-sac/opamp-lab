@@ -160,35 +160,68 @@ class _CircuitPainter extends CustomPainter {
     );
   }
 
+  void _drawArrow(Canvas canvas, Offset start, Offset end, Paint paint) {
+    canvas.drawLine(start, end, paint);
+    final direction = end - start;
+    final length = direction.distance;
+    if (length == 0) return;
+    final unit = Offset(direction.dx / length, direction.dy / length);
+    final normal = Offset(-unit.dy, unit.dx);
+    final tip = end;
+    final left = tip - unit * 10 + normal * 4;
+    final right = tip - unit * 10 - normal * 4;
+    canvas.drawLine(tip, left, paint);
+    canvas.drawLine(tip, right, paint);
+  }
+
+  void _drawOpAmp(Canvas canvas, Rect rect) {
+    final body = Path()
+      ..moveTo(rect.left, rect.top)
+      ..lineTo(rect.left, rect.bottom)
+      ..lineTo(rect.right, rect.center.dy)
+      ..close();
+    final fill = Paint()
+      ..color = const Color(0xffeef4ff)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(body, fill);
+    canvas.drawPath(body, _stroke);
+    _drawLabel(canvas, '−', Offset(rect.left + 13, rect.top + 25),
+        fontSize: 20, weight: FontWeight.w700);
+    _drawLabel(canvas, '+', Offset(rect.left + 14, rect.bottom - 43),
+        fontSize: 20, weight: FontWeight.w700);
+    _drawLabel(canvas, 'OP-AMP',
+        Offset(rect.left + rect.width * 0.22, rect.center.dy - 8),
+        fontSize: 11, weight: FontWeight.w700);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final width = size.width;
+    final height = size.height;
     final opRect = Rect.fromLTWH(
       width * 0.42,
-      size.height * 0.22,
+      height * 0.25,
       width * 0.23,
-      size.height * 0.50,
+      height * 0.42,
     );
     final minus = Offset(opRect.left, opRect.top + opRect.height * 0.32);
     final plus = Offset(opRect.left, opRect.top + opRect.height * 0.70);
     final output = Offset(opRect.right, opRect.center.dy);
     final inputStart = Offset(width * 0.06, minus.dy);
     final componentStart = Offset(width * 0.18, minus.dy);
-    final feedbackY = size.height * 0.10;
+    final feedbackY = height * 0.10;
     final outputEnd = Offset(width * 0.92, output.dy);
+
+    _drawOpAmp(canvas, opRect);
 
     // Input path and component.
     canvas.drawLine(inputStart, componentStart, _stroke);
     if (isDifferentiator) {
-      canvas.drawLine(componentStart, componentStart + const Offset(45, 0), _stroke);
-      _drawCapacitorPlates(
-        canvas,
-        componentStart + const Offset(45, 0),
-        _stroke,
-        vertical: false,
-      );
+      final capacitor = componentStart + const Offset(45, 0);
+      canvas.drawLine(componentStart, capacitor + const Offset(-7, 0), _stroke);
+      _drawCapacitorPlates(canvas, capacitor, _stroke, vertical: true);
       canvas.drawLine(
-        componentStart + const Offset(45, 0),
+        capacitor + const Offset(7, 0),
         minus,
         _stroke,
       );
@@ -208,15 +241,11 @@ class _CircuitPainter extends CustomPainter {
     _drawLabel(canvas, 'GND', groundPoint + const Offset(-18, 36));
 
     // Output.
-    canvas.drawLine(output, outputEnd, _stroke);
+    _drawArrow(canvas, output, outputEnd, _stroke);
     _drawLabel(canvas, 'Vout', outputEnd + const Offset(-10, -28));
 
     // Feedback path.
-    canvas.drawLine(
-      output,
-      Offset(output.dx, feedbackY),
-      _stroke,
-    );
+    canvas.drawLine(output, Offset(output.dx, feedbackY), _stroke);
     canvas.drawLine(
       Offset(output.dx, feedbackY),
       Offset(minus.dx, feedbackY),
@@ -228,24 +257,15 @@ class _CircuitPainter extends CustomPainter {
         (minus.dx + output.dx) / 2,
         feedbackY,
       );
-      _drawResistorZigzag(
-        canvas,
-        resistorMid + const Offset(-70, 0),
-        resistorMid + const Offset(70, 0),
-        _stroke,
-      );
+      _drawResistorZigzag(canvas, resistorMid + const Offset(-62, 0),
+          resistorMid + const Offset(62, 0), _stroke);
       _drawLabel(canvas, 'R', resistorMid + const Offset(-8, -30));
     } else {
       final capMid = Offset(
         (minus.dx + output.dx) / 2,
         feedbackY,
       );
-      _drawCapacitorPlates(
-        canvas,
-        capMid,
-        _stroke,
-        vertical: true,
-      );
+      _drawCapacitorPlates(canvas, capMid, _stroke, vertical: true);
       _drawLabel(canvas, 'C', capMid + const Offset(-8, -45));
     }
 
@@ -259,7 +279,7 @@ class _CircuitPainter extends CustomPainter {
     _drawLabel(
       canvas,
       isDifferentiator ? 'Differentiator' : 'Integrator',
-      Offset(width * 0.06, size.height * 0.86),
+      Offset(width * 0.06, height * 0.86),
       fontSize: 16,
       weight: FontWeight.w700,
     );

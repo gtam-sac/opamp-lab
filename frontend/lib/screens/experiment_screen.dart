@@ -29,6 +29,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   SimulationParams _params = SimulationParams.defaults;
   late SimulationResult _result;
   bool _isSaving = false;
+  bool _isRunning = false;
   String? _saveMessage;
   bool _controlsOpen = false;
 
@@ -48,8 +49,21 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
     );
   }
 
-  void _recompute() {
+  void _toggleSimulation() {
     setState(() {
+      _isRunning = !_isRunning;
+      if (_isRunning) {
+        _result = _run();
+      }
+      _saveMessage = null;
+    });
+  }
+
+  void _updateParams(SimulationParams params) {
+    setState(() {
+      _params = params;
+      // Controls always change the displayed circuit response. When the
+      // scope is running, the new response is picked up by the live trace.
       _result = _run();
       _saveMessage = null;
     });
@@ -112,7 +126,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          WaveformChart(result: _result),
+          WaveformChart(result: _result, isRunning: _isRunning),
           ResultsSummary(result: _result, params: _params),
           if (widget.config.type == LabExperiment.differentiator)
             const DifferentiatorCircuitDiagram()
@@ -127,14 +141,9 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   Widget _controls() {
     return ControlPanel(
       params: _params,
-      onChanged: (params) {
-        setState(() {
-          _params = params;
-          _result = _run();
-          _saveMessage = null;
-        });
-      },
-      onRunPressed: _recompute,
+      onChanged: _updateParams,
+      onRunPressed: _toggleSimulation,
+      isRunning: _isRunning,
       onSavePressed: _saveRun,
       isSaving: _isSaving,
       saveMessage: _saveMessage,
@@ -216,14 +225,9 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
                     padding: const EdgeInsets.all(8),
                     child: ControlPanel(
                       params: _params,
-                      onChanged: (params) {
-                        setState(() {
-                          _params = params;
-                          _result = _run();
-                          _saveMessage = null;
-                        });
-                      },
-                      onRunPressed: _recompute,
+                      onChanged: _updateParams,
+                      onRunPressed: _toggleSimulation,
+                      isRunning: _isRunning,
                       onSavePressed: _saveRun,
                       isSaving: _isSaving,
                       saveMessage: _saveMessage,

@@ -7,6 +7,7 @@ class ControlPanel extends StatelessWidget {
   final SimulationParams params;
   final ValueChanged<SimulationParams> onChanged;
   final VoidCallback onRunPressed;
+  final bool isRunning;
   final VoidCallback onSavePressed;
   final bool isSaving;
   final String? saveMessage;
@@ -16,6 +17,7 @@ class ControlPanel extends StatelessWidget {
     required this.params,
     required this.onChanged,
     required this.onRunPressed,
+    required this.isRunning,
     required this.onSavePressed,
     required this.isSaving,
     required this.saveMessage,
@@ -132,8 +134,17 @@ class ControlPanel extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: onRunPressed,
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('RUN / UPDATE SIMULATION'),
+              icon: Icon(isRunning ? Icons.stop : Icons.play_arrow),
+              label: Text(isRunning ? 'STOP SIMULATION' : 'RUN SIMULATION'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isRunning
+                    ? Theme.of(context).colorScheme.error
+                    : null,
+                foregroundColor: isRunning
+                    ? Theme.of(context).colorScheme.onError
+                    : null,
+                minimumSize: const Size.fromHeight(46),
+              ),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(

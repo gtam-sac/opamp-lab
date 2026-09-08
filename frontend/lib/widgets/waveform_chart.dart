@@ -3,10 +3,66 @@ import 'package:flutter/material.dart';
 
 import '../logic/simulation_result.dart';
 
-class WaveformChart extends StatelessWidget {
+class WaveformChart extends StatefulWidget {
   final SimulationResult result;
+  final bool isRunning;
 
-  const WaveformChart({super.key, required this.result});
+  const WaveformChart({
+    super.key,
+    required this.result,
+    required this.isRunning,
+  });
+
+  @override
+  State<WaveformChart> createState() => _WaveformChartState();
+}
+
+class _WaveformChartState extends State<WaveformChart>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  SimulationResult get result => widget.result;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
+    _syncAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant WaveformChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isRunning != widget.isRunning) {
+      _syncAnimation();
+    }
+  }
+
+  void _syncAnimation() {
+    if (widget.isRunning) {
+      _controller.repeat();
+    } else {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  List<double> _animatedValues(List<double> values) {
+    if (!widget.isRunning || values.length < 2) return values;
+    final shift = (_controller.value * values.length).round() % values.length;
+    return [
+      ...values.sublist(shift),
+      ...values.sublist(0, shift),
+    ];
+  }
 
   LineChartBarData _line(List<double> values, Color color) {
     return LineChartBarData(
@@ -91,7 +147,15 @@ class WaveformChart extends StatelessWidget {
             const SizedBox(height: 8),
             SizedBox(
               height: 280,
-              child: LineChart(_chartData(values: values, color: color)),
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) => LineChart(
+                  _chartData(
+                    values: _animatedValues(values),
+                    color: color,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
