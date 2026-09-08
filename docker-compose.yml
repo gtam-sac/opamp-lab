@@ -1,0 +1,52 @@
+services:
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: opamp_lab
+      MYSQL_USER: opamp_app
+      MYSQL_PASSWORD: opamp_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - opamp_mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      CORS_ORIGIN: http://localhost:8080
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: opamp_app
+      DB_PASSWORD: opamp_password
+      DB_NAME: opamp_lab
+      JWT_SECRET: replace-this-before-public-deployment
+      JWT_EXPIRES_IN: 7d
+    ports:
+      - "4000:4000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        API_BASE_URL: http://localhost:4000/api
+    ports:
+      - "8080:10000"
+    depends_on:
+      - backend
+
+volumes:
+  opamp_mysql_data:

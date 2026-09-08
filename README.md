@@ -291,7 +291,27 @@ usually reachable at `http://10.0.2.2:4000/api`.
    - Delete the session.
    - Log out and log back in.
 
-## 8. Backend API contract
+## 8. Shareable Docker setup
+
+The complete stack can be started by anyone with Docker Desktop installed:
+
+```powershell
+docker compose up --build
+```
+
+Open `http://localhost:8080`. The Compose setup starts MySQL, the API, and the
+Flutter web build together, so the recipient does not need Flutter, Node.js, or
+MySQL installed separately. Stop it with:
+
+```powershell
+docker compose down
+```
+
+This setup is intended for local sharing/demo use. Before public deployment,
+replace the example database passwords and `JWT_SECRET`, configure a real HTTPS
+API URL in the frontend build, and set an explicit production `CORS_ORIGIN`.
+
+## 9. Backend API contract
 
 Base path:
 
