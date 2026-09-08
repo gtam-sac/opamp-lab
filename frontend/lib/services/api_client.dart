@@ -20,6 +20,16 @@ class ApiClient {
 
   const ApiClient({this.baseUrl = kApiBaseUrl});
 
+  Uri _uri(String path) {
+    final normalizedBase = baseUrl.replaceFirst(RegExp(r'/$'), '');
+    final normalizedPath = path.startsWith('/api/')
+        ? path.substring(4)
+        : path.startsWith('/')
+            ? path
+            : '/$path';
+    return Uri.parse('$normalizedBase$normalizedPath');
+  }
+
   Map<String, String> _headers(String? token) {
     return {
       'Content-Type': 'application/json',
@@ -35,7 +45,7 @@ class ApiClient {
     return _request(
       () => http
           .get(
-            Uri.parse('$baseUrl$path'),
+            _uri(path),
             headers: _headers(token),
           )
           .timeout(const Duration(seconds: 10)),
@@ -50,7 +60,7 @@ class ApiClient {
     return _request(
       () => http
           .post(
-            Uri.parse('$baseUrl$path'),
+            _uri(path),
             headers: _headers(token),
             body: jsonEncode(body),
           )
@@ -65,7 +75,7 @@ class ApiClient {
     return _request(
       () => http
           .delete(
-            Uri.parse('$baseUrl$path'),
+            _uri(path),
             headers: _headers(token),
           )
           .timeout(const Duration(seconds: 10)),

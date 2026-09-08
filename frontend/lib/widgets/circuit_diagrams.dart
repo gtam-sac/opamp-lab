@@ -160,27 +160,9 @@ class _CircuitPainter extends CustomPainter {
     );
   }
 
-  void _drawOpAmpTriangle(
-    Canvas canvas,
-    Rect rect,
-    Paint paint,
-  ) {
-    final path = Path()
-      ..moveTo(rect.left, rect.top)
-      ..lineTo(rect.left, rect.bottom)
-      ..lineTo(rect.right, rect.center.dy)
-      ..close();
-    canvas.drawPath(path, paint);
-
-    _drawLabel(canvas, '−', Offset(rect.left + 15, rect.top + 25), fontSize: 18);
-    _drawLabel(canvas, '+', Offset(rect.left + 15, rect.bottom - 43), fontSize: 18);
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
     final width = size.width;
-    final yIn = size.height * 0.38;
-    final yPlus = size.height * 0.70;
     final opRect = Rect.fromLTWH(
       width * 0.42,
       size.height * 0.22,

@@ -17,6 +17,14 @@ app.use(cors({ origin: corsOrigin }));
 
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'opamp-lab-backend',
+    message: 'Use /api/health to check the API.',
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'opamp-lab-backend' });
 });

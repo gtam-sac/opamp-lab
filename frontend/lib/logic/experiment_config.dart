@@ -32,7 +32,7 @@ class ExperimentConfig {
     required this.run,
   });
 
-  static final differentiator = ExperimentConfig(
+  static const differentiator = ExperimentConfig(
     type: LabExperiment.differentiator,
     title: 'Op-Amp Differentiator',
     apiValue: 'differentiator',
@@ -42,7 +42,7 @@ class ExperimentConfig {
         'of change of the input. The input capacitor passes changing signals '
         'as current into the inverting input (a virtual ground); the feedback '
         'resistor converts that current back into an output voltage.',
-    keyPoints: const [
+    keyPoints: [
       'Increasing R or C increases the output magnitude for the same input.',
       'Sharp edges (square wave) produce large, narrow spikes because dV/dt is huge at a transition.',
       'A sine input produces a cosine-shaped, 90°-phase-shifted output.',
@@ -52,7 +52,7 @@ class ExperimentConfig {
     run: DifferentiatorSimulator.run,
   );
 
-  static final integrator = ExperimentConfig(
+  static const integrator = ExperimentConfig(
     type: LabExperiment.integrator,
     title: 'Op-Amp Integrator',
     apiValue: 'integrator',
@@ -63,7 +63,7 @@ class ExperimentConfig {
         'resistor sets a current into the virtual-ground inverting input; the '
         'feedback capacitor accumulates that current as charge, producing an '
         'output voltage.',
-    keyPoints: const [
+    keyPoints: [
       'Increasing R or C decreases the output magnitude for the same input.',
       'A square-wave input produces a triangle-wave output.',
       'A sine input produces a cosine-shaped output (integration is a −90° phase shift).',

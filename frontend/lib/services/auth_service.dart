@@ -17,14 +17,13 @@ class AuthService {
     required String password,
   }) async {
     final data = await _apiClient.post(
-      '/api/auth/signup',
+      '/auth/signup',
       {
         'name': name,
         'email': email,
         'password': password,
       },
     );
-    await _saveToken(data['token'] as String);
     return User.fromJson(data['user'] as Map<String, dynamic>);
   }
   Future<User> login({
@@ -32,7 +31,7 @@ class AuthService {
     required String password,
   }) async {
     final data = await _apiClient.post(
-      '/api/auth/login',
+      '/auth/login',
       {
         'email': email,
         'password': password,
@@ -44,7 +43,7 @@ class AuthService {
 
   Future<User> fetchProfile(String token) async {
     final data = await _apiClient.get(
-      '/api/auth/profile',
+      '/auth/profile',
       token: token,
     );
     return User.fromJson(data['user'] as Map<String, dynamic>);

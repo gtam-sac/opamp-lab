@@ -243,6 +243,24 @@ To use another backend without editing source code:
 flutter run -d chrome --dart-define=API_BASE_URL=https://your-backend.example/api
 ```
 
+### Android app
+
+The Flutter project includes an Android target. Android Studio with the Android
+SDK, platform tools, and Java 17 is required to build or run it:
+
+```bash
+cd frontend
+flutter pub get
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://your-backend.example/api
+```
+
+The generated APK is written to
+`frontend/build/app/outputs/flutter-apk/app-release.apk`. The backend must be
+reachable from the phone or emulator; do not use `localhost` for a physical
+device. For the Android emulator, a backend running on the host machine is
+usually reachable at `http://10.0.2.2:4000/api`.
+
 ## 7. Run everything locally
 
 1. Start MySQL/MariaDB.

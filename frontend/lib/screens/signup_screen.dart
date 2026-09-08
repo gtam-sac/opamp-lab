@@ -27,11 +27,16 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await context.read<AuthProvider>().signup(
+    final created = await context.read<AuthProvider>().signup(
           _nameController.text.trim(),
           _emailController.text.trim(),
           _passwordController.text,
         );
+    if (!mounted || !created) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Account created. Please log in.')),
+    );
+    Navigator.pop(context);
   }
 
   @override

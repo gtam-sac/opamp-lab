@@ -53,12 +53,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      user = await _authService.signup(
+      await _authService.signup(
         name: name,
         email: email,
         password: password,
       );
-      token = await _authService.getSavedToken();
+      user = null;
+      token = null;
       return true;
     } on ApiException catch (e) {
       error = e.message;
