@@ -185,9 +185,11 @@ class _CircuitPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     canvas.drawPath(body, fill);
     canvas.drawPath(body, _stroke);
-    _drawLabel(canvas, '−', Offset(rect.left + 13, rect.top + 25),
+    _drawLabel(
+        canvas, '−', Offset(rect.left + 13, rect.top + rect.height * 0.18),
         fontSize: 20, weight: FontWeight.w700);
-    _drawLabel(canvas, '+', Offset(rect.left + 14, rect.bottom - 43),
+    _drawLabel(
+        canvas, '+', Offset(rect.left + 14, rect.top + rect.height * 0.65),
         fontSize: 20, weight: FontWeight.w700);
     _drawLabel(canvas, 'OP-AMP',
         Offset(rect.left + rect.width * 0.22, rect.center.dy - 8),
@@ -198,88 +200,126 @@ class _CircuitPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final width = size.width;
     final height = size.height;
-    final opRect = Rect.fromLTWH(
-      width * 0.42,
-      height * 0.25,
-      width * 0.23,
-      height * 0.42,
+
+    final minus = Offset(width * 0.48, height * 0.48);
+    final plus = Offset(width * 0.48, height * 0.64);
+    final output = Offset(width * 0.76, height * 0.56);
+    final outputNode = Offset(width * 0.86, output.dy);
+    final inputStart = Offset(width * 0.04, minus.dy);
+    final inputComponentStart = Offset(width * 0.20, minus.dy);
+    final inputComponentEnd = Offset(width * 0.34, minus.dy);
+    final feedbackY = height * 0.18;
+    final feedbackComponentStart = Offset(width * 0.58, feedbackY);
+    final feedbackComponentEnd = Offset(width * 0.70, feedbackY);
+    final groundPoint = Offset(width * 0.48, plus.dy + 0.10 * height);
+    final outputEnd = Offset(width * 0.96, output.dy);
+    final opRect = Rect.fromLTRB(
+      minus.dx,
+      height * 0.36,
+      output.dx,
+      height * 0.72,
     );
-    final minus = Offset(opRect.left, opRect.top + opRect.height * 0.32);
-    final plus = Offset(opRect.left, opRect.top + opRect.height * 0.70);
-    final output = Offset(opRect.right, opRect.center.dy);
-    final inputStart = Offset(width * 0.06, minus.dy);
-    final componentStart = Offset(width * 0.18, minus.dy);
-    final feedbackY = height * 0.10;
-    final outputEnd = Offset(width * 0.92, output.dy);
+
+    // Input path to the inverting input. The actual series element is between the
+    // Vin source and the - input node; no wire bypasses the component.
+    canvas.drawLine(inputStart, inputComponentStart, _stroke);
+    if (isDifferentiator) {
+      final capacitorMid = Offset(
+        (inputComponentStart.dx + inputComponentEnd.dx) / 2,
+        minus.dy,
+      );
+      canvas.drawLine(
+        inputComponentStart,
+        capacitorMid - const Offset(7, 0),
+        _stroke,
+      );
+      _drawCapacitorPlates(canvas, capacitorMid, _stroke);
+      canvas.drawLine(
+        capacitorMid + const Offset(7, 0),
+        inputComponentEnd,
+        _stroke,
+      );
+      _drawLabel(canvas, 'C', capacitorMid + const Offset(-5, -28));
+    } else {
+      _drawResistorZigzag(
+        canvas,
+        inputComponentStart,
+        inputComponentEnd,
+        _stroke,
+      );
+      _drawLabel(
+        canvas,
+        'R',
+        Offset((inputComponentStart.dx + inputComponentEnd.dx) / 2 - 5,
+            minus.dy - 28),
+      );
+    }
+    canvas.drawLine(inputComponentEnd, minus, _stroke);
+    _drawLabel(canvas, 'Vin', inputStart + const Offset(-2, -28));
+
+    // The inverting node is the shared connection point for input and feedback.
+    canvas.drawCircle(minus, 3.5, _fill);
+
+    // Feedback path is a single, continuous series path from the - input node to
+    // the output pin. We do not allow a bypass wire or floating capacitor terminal.
+    canvas.drawLine(minus, Offset(minus.dx, feedbackY), _stroke);
+    canvas.drawLine(
+      Offset(minus.dx, feedbackY),
+      feedbackComponentStart,
+      _stroke,
+    );
+    if (isDifferentiator) {
+      _drawResistorZigzag(
+        canvas,
+        feedbackComponentStart,
+        feedbackComponentEnd,
+        _stroke,
+      );
+      _drawLabel(
+        canvas,
+        'R',
+        Offset(
+          (feedbackComponentStart.dx + feedbackComponentEnd.dx) / 2 - 5,
+          feedbackY - 28,
+        ),
+      );
+    } else {
+      final capacitorMid = Offset(
+        (feedbackComponentStart.dx + feedbackComponentEnd.dx) / 2,
+        feedbackY,
+      );
+      canvas.drawLine(
+        feedbackComponentStart,
+        capacitorMid - const Offset(7, 0),
+        _stroke,
+      );
+      _drawCapacitorPlates(canvas, capacitorMid, _stroke);
+      canvas.drawLine(
+        capacitorMid + const Offset(7, 0),
+        feedbackComponentEnd,
+        _stroke,
+      );
+      _drawLabel(canvas, 'C', capacitorMid + const Offset(-5, -34));
+    }
+    canvas.drawLine(feedbackComponentEnd, Offset(feedbackComponentEnd.dx, output.dy), _stroke);
+    canvas.drawLine(Offset(feedbackComponentEnd.dx, output.dy), output, _stroke);
+
+    // Output lead and label.
+    canvas.drawLine(output, outputNode, _stroke);
+    _drawArrow(canvas, outputNode, outputEnd, _stroke);
+    canvas.drawCircle(output, 3.5, _fill);
+    _drawLabel(canvas, 'Vout', outputEnd + const Offset(-34, -28));
 
     _drawOpAmp(canvas, opRect);
 
-    // Input path and component.
-    canvas.drawLine(inputStart, componentStart, _stroke);
-    if (isDifferentiator) {
-      final capacitor = componentStart + const Offset(45, 0);
-      canvas.drawLine(componentStart, capacitor + const Offset(-7, 0), _stroke);
-      _drawCapacitorPlates(canvas, capacitor, _stroke, vertical: true);
-      canvas.drawLine(
-        capacitor + const Offset(7, 0),
-        minus,
-        _stroke,
-      );
-      _drawLabel(canvas, 'C', componentStart + const Offset(30, -30));
-    } else {
-      final resistorEnd = componentStart + const Offset(95, 0);
-      _drawResistorZigzag(canvas, componentStart, resistorEnd, _stroke);
-      canvas.drawLine(resistorEnd, minus, _stroke);
-      _drawLabel(canvas, 'R', componentStart + const Offset(38, -30));
-    }
-    _drawLabel(canvas, 'Vin', inputStart + const Offset(-2, -28));
-
-    // Non-inverting input to ground.
-    canvas.drawLine(plus, Offset(plus.dx - 42, plus.dy), _stroke);
-    final groundPoint = Offset(plus.dx - 42, plus.dy);
+    // Non-inverting input is referenced to ground.
+    canvas.drawLine(plus, groundPoint, _stroke);
     _drawGroundSymbol(canvas, groundPoint, _stroke);
-    _drawLabel(canvas, 'GND', groundPoint + const Offset(-18, 36));
-
-    // Output.
-    _drawArrow(canvas, output, outputEnd, _stroke);
-    _drawLabel(canvas, 'Vout', outputEnd + const Offset(-10, -28));
-
-    // Feedback path.
-    canvas.drawLine(output, Offset(output.dx, feedbackY), _stroke);
-    canvas.drawLine(
-      Offset(output.dx, feedbackY),
-      Offset(minus.dx, feedbackY),
-      _stroke,
-    );
-
-    if (isDifferentiator) {
-      final resistorMid = Offset(
-        (minus.dx + output.dx) / 2,
-        feedbackY,
-      );
-      _drawResistorZigzag(canvas, resistorMid + const Offset(-62, 0),
-          resistorMid + const Offset(62, 0), _stroke);
-      _drawLabel(canvas, 'R', resistorMid + const Offset(-8, -30));
-    } else {
-      final capMid = Offset(
-        (minus.dx + output.dx) / 2,
-        feedbackY,
-      );
-      _drawCapacitorPlates(canvas, capMid, _stroke, vertical: true);
-      _drawLabel(canvas, 'C', capMid + const Offset(-8, -45));
-    }
-
-    canvas.drawLine(
-      Offset(minus.dx, feedbackY),
-      minus,
-      _stroke,
-    );
-    canvas.drawCircle(minus, 3, _fill);
-    canvas.drawCircle(output, 3, _fill);
+    _drawLabel(canvas, 'GND', groundPoint + const Offset(-18, 48));
     _drawLabel(
       canvas,
       isDifferentiator ? 'Differentiator' : 'Integrator',
-      Offset(width * 0.06, height * 0.86),
+      Offset(width * 0.04, height * 0.88),
       fontSize: 16,
       weight: FontWeight.w700,
     );

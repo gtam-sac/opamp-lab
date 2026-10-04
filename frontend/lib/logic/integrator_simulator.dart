@@ -11,8 +11,13 @@ class IntegratorSimulator {
     required double resistanceOhm,
     required double capacitanceF,
   }) {
-    final time =
-        WaveformGenerator.generateTimeAxis(frequencyHz: frequencyHz);
+    WaveformGenerator.validateSimulationParameters(
+      amplitudeV: amplitudeV,
+      frequencyHz: frequencyHz,
+      resistanceOhm: resistanceOhm,
+      capacitanceF: capacitanceF,
+    );
+    final time = WaveformGenerator.generateTimeAxis(frequencyHz: frequencyHz);
     final vin = time
         .map(
           (t) => WaveformGenerator.valueAt(
@@ -35,15 +40,16 @@ class IntegratorSimulator {
       vout[i] = -(1 / rc) * integral;
     }
 
+    // An ideal integrator's DC initial condition is arbitrary. Center this
+    // periodic steady-state trace so a sine input displays its cosine response.
+    final mean = vout.reduce((sum, value) => sum + value) / n;
     for (int i = 0; i < n; i++) {
-      vout[i] = vout[i].clamp(
-        -kOpAmpSaturationVoltage,
-        kOpAmpSaturationVoltage,
-      );
+      vout[i] = (vout[i] - mean)
+          .clamp(-kOpAmpSaturationVoltage, kOpAmpSaturationVoltage)
+          .toDouble();
     }
 
-    final peak =
-        vout.fold<double>(0, (p, v) => math.max(p, v.abs()));
+    final peak = vout.fold<double>(0, (p, v) => math.max(p, v.abs()));
 
     return SimulationResult(
       time: time,

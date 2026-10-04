@@ -21,6 +21,11 @@ class ResultsSummary extends StatelessWidget {
     return '${(seconds * 1e6).toStringAsFixed(2)} µs';
   }
 
+  String _resistance(double ohms) => '${(ohms / 1000).toStringAsFixed(1)} kΩ';
+
+  String _capacitance(double nanofarads) =>
+      '${(nanofarads / 1000).toStringAsFixed(1)} µF';
+
   @override
   Widget build(BuildContext context) {
     final ratio = params.frequencyHz / result.cornerFrequencyHz;
@@ -56,11 +61,8 @@ class ResultsSummary extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 6),
-            _row('Resistance R', '${params.resistanceOhm.round()} Ω'),
-            _row(
-              'Capacitance C',
-              '${params.capacitanceNf.toStringAsFixed(0)} nF',
-            ),
+            _row('Resistance R', _resistance(params.resistanceOhm)),
+            _row('Capacitance C', _capacitance(params.capacitanceNf)),
             _row(
               'Amplitude',
               '${params.amplitudeV.toStringAsFixed(2)} V',
@@ -85,18 +87,14 @@ class ResultsSummary extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .errorContainer,
+                  color: Theme.of(context).colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '⚠ Output has reached the simulated op-amp supply-rail limit '
                   '(±13.5 V) and is clipping. Try reducing R, C, or amplitude.',
                   style: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onErrorContainer,
+                    color: Theme.of(context).colorScheme.onErrorContainer,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

@@ -2,13 +2,15 @@
 
 ## 1. What is the project?
 
-It is an educational virtual laboratory built with:
+It is a standalone educational virtual laboratory built with:
 
 ```text
-Flutter Web → Node.js/Express API → MySQL/MariaDB
+Flutter → local numerical simulation → waveform plots
 ```
 
-The frontend performs the mathematical simulation and visualization. The backend handles authentication and saved experiment history.
+The app opens directly in the differentiator lab. Students can switch to the
+integrator, select an input waveform, adjust circuit parameters, and observe
+the calculated input/output plots. No account, backend, or database is needed.
 
 ## 2. Why does a differentiator use `Vout = -RC(dVin/dt)`?
 
@@ -80,7 +82,8 @@ The derivative of a sine is a cosine:
 d/dt [sin(ωt)] = ω cos(ωt)
 ```
 
-Therefore the differentiator produces a cosine-shaped output with a phase relationship corresponding to the derivative.
+Therefore the inverting differentiator produces a negative-cosine output,
+lagging the sine input by 90°.
 
 Its ideal amplitude is:
 
@@ -142,7 +145,9 @@ square → triangle
 
 ## 10. What happens to a sine wave in an integrator?
 
-Integration changes a sine wave into a cosine-shaped waveform with the corresponding negative sign/phase relationship.
+The integral of a sine is a negative cosine; the inverting integrator's
+additional negative sign therefore produces a positive-cosine output, leading
+the sine input by 90°.
 
 For a sine input, the ideal peak magnitude is:
 
@@ -242,60 +247,11 @@ The project uses ±13.5 V as a simple educational output-swing limit.
 
 It is intentionally fixed rather than modelling a complete real op-amp.
 
-## 18. Why does Flutter not connect directly to MySQL?
+## 18. Does the lab need a backend or database?
 
-For security and architecture:
-
-```text
-Flutter → API → MySQL
-```
-
-The backend:
-
-- validates requests
-- verifies JWTs
-- controls database access
-- keeps database credentials private
-
-Allowing Flutter to connect directly to MySQL would expose database credentials and bypass the server-side security boundary.
-
-## 19. Why bcrypt?
-
-Passwords should not be stored as plain text.
-
-The backend stores a bcrypt password hash instead.
-
-During login, bcrypt checks the entered password against the stored hash.
-
-So even if the database is inspected, the original password is not stored directly.
-
-## 20. Why JWT?
-
-After successful authentication, the backend gives the client a signed JWT.
-
-The client sends it with protected requests:
-
-```text
-Authorization: Bearer <token>
-```
-
-The backend verifies the token before allowing protected operations.
-
-The client does not get to decide that a token is valid merely because it has one.
-
-## 21. Why use Provider?
-
-The project intentionally avoids large state-management frameworks.
-
-`provider` gives the app a simple shared `AuthProvider` containing:
-
-- current user
-- JWT
-- loading state
-- error state
-- authentication status
-
-`AuthGate` reacts to this state and switches between login and dashboard.
+No. The current lab calculates and plots the simulation locally in Flutter.
+The Node/Express and MySQL files are retained as legacy code from the earlier
+account and saved-history version, but the app does not call them.
 
 ## 22. Why one ExperimentScreen?
 
@@ -312,49 +268,6 @@ The configuration supplies the title, formula, explanation, and simulation funct
 
 This keeps the UI code smaller and easier to maintain.
 
-## 23. What does the backend save?
-
-A saved experiment contains:
-
-- user ID
-- experiment type
-- waveform type
-- resistance
-- capacitance
-- amplitude
-- frequency
-- optional notes
-- creation time
-
-The user can later list and delete their own saved sessions.
-
-## 24. Why are API request and response field names different?
-
-The existing backend contract intentionally uses:
-
-```text
-Request:
-experimentType
-waveformType
-resistanceOhm
-capacitanceF
-amplitudeV
-frequencyHz
-```
-
-while experiment responses expose the database column names:
-
-```text
-experiment_type
-waveform_type
-resistance_ohm
-capacitance_f
-amplitude_v
-frequency_hz
-```
-
-The Flutter `ExperimentSession` model handles both directions explicitly.
-
 ## 25. Important project limitations to admit in a viva
 
 Do not claim this is a full circuit simulator.
@@ -370,9 +283,8 @@ Known limitations:
 - simplified ideal differentiator
 - no practical differentiator compensation components
 - no integrator leakage/reset component
-- no password-reset flow
-- no automated Flutter test suite
+- no persisted experiment history
 
 ## 26. One-minute explanation
 
-> This project is a Flutter Web virtual laboratory connected to a Node.js and Express REST API with MySQL. It simulates an ideal op-amp differentiator using `Vout = -RC dVin/dt` and an ideal integrator using `Vout = -(1/RC)∫Vin dt`. The frontend generates sine, square, and triangle waveforms, samples them numerically, calculates the output, limits it to ±13.5 V, and plots separate input and output graphs. Users can adjust resistance, capacitance, amplitude, frequency, and waveform live. Authentication and saved experiment history are handled by the backend using bcrypt and JWT, while Flutter never connects directly to MySQL.
+> This is a standalone Flutter virtual lab for studying op-amp differentiators and integrators. It generates sine, square, and triangle inputs, numerically calculates each circuit's response, limits the output to ±13.5 V, and plots the input and output. Students can change resistance, capacitance, amplitude, and frequency, switch experiments, and reset the controls. The simulation runs locally and requires no login, backend, or database.

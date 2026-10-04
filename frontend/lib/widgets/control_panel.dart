@@ -7,51 +7,53 @@ class ControlPanel extends StatelessWidget {
   final SimulationParams params;
   final ValueChanged<SimulationParams> onChanged;
   final VoidCallback onRunPressed;
+  final VoidCallback onResetPressed;
   final bool isRunning;
-  final VoidCallback onSavePressed;
-  final bool isSaving;
-  final String? saveMessage;
 
   const ControlPanel({
     super.key,
     required this.params,
     required this.onChanged,
     required this.onRunPressed,
+    required this.onResetPressed,
     required this.isRunning,
-    required this.onSavePressed,
-    required this.isSaving,
-    required this.saveMessage,
   });
 
   String _formatResistance(double value) =>
-      '${value.round()} Ω';
+      'Value: ${(value / 1000).toStringAsFixed(1)} kΩ';
 
   String _formatCapacitance(double value) =>
-      '${value.round()} nF';
+      'Value: ${(value / 1000).toStringAsFixed(1)} µF';
 
   Widget _slider({
     required String label,
     required double value,
     required double min,
     required double max,
+    required int divisions,
     required String valueText,
     required ValueChanged<double> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-            Text(valueText),
-          ],
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         Slider(
           value: value,
           min: min,
           max: max,
+          divisions: divisions,
           onChanged: onChanged,
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            valueText,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
       ],
     );
@@ -73,8 +75,9 @@ class ControlPanel extends StatelessWidget {
             _slider(
               label: 'Resistance (R)',
               value: params.resistanceOhm,
-              min: 1000,
+              min: 100,
               max: 100000,
+              divisions: 999,
               valueText: _formatResistance(params.resistanceOhm),
               onChanged: (value) => onChanged(
                 params.copyWith(resistanceOhm: value),
@@ -83,8 +86,9 @@ class ControlPanel extends StatelessWidget {
             _slider(
               label: 'Capacitance (C)',
               value: params.capacitanceNf,
-              min: 1,
-              max: 1000,
+              min: 100,
+              max: 10000,
+              divisions: 99,
               valueText: _formatCapacitance(params.capacitanceNf),
               onChanged: (value) => onChanged(
                 params.copyWith(capacitanceNf: value),
@@ -95,7 +99,8 @@ class ControlPanel extends StatelessWidget {
               value: params.amplitudeV,
               min: 0.5,
               max: 10,
-              valueText: '${params.amplitudeV.toStringAsFixed(1)} V',
+              divisions: 95,
+              valueText: 'Value: ${params.amplitudeV.toStringAsFixed(1)} V',
               onChanged: (value) => onChanged(
                 params.copyWith(amplitudeV: value),
               ),
@@ -105,7 +110,8 @@ class ControlPanel extends StatelessWidget {
               value: params.frequencyHz,
               min: 10,
               max: 2000,
-              valueText: '${params.frequencyHz.round()} Hz',
+              divisions: 199,
+              valueText: 'Value: ${params.frequencyHz.round()} Hz',
               onChanged: (value) => onChanged(
                 params.copyWith(frequencyHz: value),
               ),
@@ -132,48 +138,42 @@ class ControlPanel extends StatelessWidget {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onRunPressed,
-              icon: Icon(isRunning ? Icons.stop : Icons.play_arrow),
-              label: Text(isRunning ? 'STOP SIMULATION' : 'RUN SIMULATION'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isRunning
-                    ? Theme.of(context).colorScheme.error
-                    : null,
-                foregroundColor: isRunning
-                    ? Theme.of(context).colorScheme.onError
-                    : null,
-                minimumSize: const Size.fromHeight(46),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onRunPressed,
+                    icon: Icon(isRunning ? Icons.stop : Icons.play_arrow),
+                    label: Text(isRunning ? 'STOP' : 'RUN'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isRunning
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                      foregroundColor: isRunning
+                          ? Theme.of(context).colorScheme.onError
+                          : null,
+                      minimumSize: const Size.fromHeight(46),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onResetPressed,
+                    icon: const Icon(Icons.restart_alt),
+                    label: const Text('RESET'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: isSaving ? null : onSavePressed,
-              icon: isSaving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save_outlined),
-              label: Text(isSaving ? 'Saving...' : 'Save This Run'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(46),
-              ),
+            Text(
+              'Reset restores the default circuit values and stops the simulation.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            if (saveMessage != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                saveMessage!,
-                style: TextStyle(
-                  color: saveMessage!.toLowerCase().contains('failed') ||
-                          saveMessage!.toLowerCase().contains('could not')
-                      ? Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ],
         ),
       ),

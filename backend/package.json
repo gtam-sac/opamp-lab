@@ -2,6 +2,7 @@
   "name": "opamp-lab-backend",
   "version": "1.0.0",
   "description": "REST API for the Op-Amp Differentiator/Integrator virtual lab (college project)",
+  "license": "UNLICENSED",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -17,6 +18,7 @@
     "mysql2": "^3.11.0"
   },
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "nodemon": "^3.1.4"
   }
 }

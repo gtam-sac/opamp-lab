@@ -58,10 +58,7 @@ class _WaveformChartState extends State<WaveformChart>
   List<double> _animatedValues(List<double> values) {
     if (!widget.isRunning || values.length < 2) return values;
     final shift = (_controller.value * values.length).round() % values.length;
-    return [
-      ...values.sublist(shift),
-      ...values.sublist(0, shift),
-    ];
+    return [...values.skip(shift), ...values.take(shift)];
   }
 
   LineChartBarData _line(List<double> values, Color color) {
@@ -72,15 +69,12 @@ class _WaveformChartState extends State<WaveformChart>
       ],
       isCurved: false,
       color: color,
-      barWidth: 2,
+      barWidth: 2.5,
       dotData: const FlDotData(show: false),
     );
   }
 
-  LineChartData _chartData({
-    required List<double> values,
-    required Color color,
-  }) {
+  LineChartData _chartData(List<double> values, Color color) {
     final minY = values.reduce((a, b) => a < b ? a : b);
     final maxY = values.reduce((a, b) => a > b ? a : b);
     final padding = ((maxY - minY).abs() * 0.12).clamp(0.5, double.infinity);
@@ -112,17 +106,32 @@ class _WaveformChartState extends State<WaveformChart>
           ),
         ),
         bottomTitles: AxisTitles(
-          axisNameWidget: const Text('Time (s)'),
+          axisNameWidget: const Text('Time (ms)'),
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 32,
             getTitlesWidget: (value, meta) => Text(
-              value.toStringAsFixed(3),
+              (value * 1000).toStringAsFixed(1),
               style: const TextStyle(fontSize: 10),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _legend(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: 3,
+          color: color,
+        ),
+        const SizedBox(width: 6),
+        Text(label),
+      ],
     );
   }
 
@@ -139,21 +148,17 @@ class _WaveformChartState extends State<WaveformChart>
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
+            const SizedBox(height: 6),
+            _legend(color, title.contains('Input') ? 'Vin' : 'Vout'),
             const SizedBox(height: 8),
             SizedBox(
-              height: 280,
+              height: 340,
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) => LineChart(
-                  _chartData(
-                    values: _animatedValues(values),
-                    color: color,
-                  ),
+                  _chartData(_animatedValues(values), color),
                 ),
               ),
             ),
@@ -165,21 +170,29 @@ class _WaveformChartState extends State<WaveformChart>
 
   @override
   Widget build(BuildContext context) {
-    final outputColor =
-        result.isSaturating ? Colors.orange : Colors.deepOrange;
-
     return Column(
       children: [
         _chart(
-          title: 'Input Voltage (Vin) vs Time',
+          title: 'Input Waveform',
           values: result.vin,
           color: Colors.blue,
         ),
         _chart(
-          title: 'Output Voltage (Vout) vs Time',
+          title: 'Output Waveform',
           values: result.vout,
-          color: outputColor,
+          color: Colors.deepOrange,
         ),
+        if (result.isSaturating)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Output clipped at ±${kOpAmpSaturationVoltage.toStringAsFixed(1)} V',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
       ],
     );
   }

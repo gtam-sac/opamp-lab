@@ -1,15 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../logic/experiment_config.dart';
 import '../logic/simulation_result.dart';
-import '../models/experiment_session.dart';
 import '../models/simulation_params.dart';
-import '../services/api_client.dart';
-import '../services/auth_provider.dart';
-import '../services/experiment_service.dart';
 import '../widgets/circuit_diagrams.dart';
 import '../widgets/control_panel.dart';
 import '../widgets/info_section.dart';
@@ -26,21 +21,21 @@ class ExperimentScreen extends StatefulWidget {
 }
 
 class _ExperimentScreenState extends State<ExperimentScreen> {
+  late ExperimentConfig _config;
   SimulationParams _params = SimulationParams.defaults;
   late SimulationResult _result;
-  bool _isSaving = false;
   bool _isRunning = false;
-  String? _saveMessage;
   bool _controlsOpen = false;
 
   @override
   void initState() {
     super.initState();
+    _config = widget.config;
     _result = _run();
   }
 
   SimulationResult _run() {
-    return widget.config.run(
+    return _config.run(
       waveform: _params.waveform,
       amplitudeV: _params.amplitudeV,
       frequencyHz: _params.frequencyHz,
@@ -55,69 +50,31 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
       if (_isRunning) {
         _result = _run();
       }
-      _saveMessage = null;
+    });
+  }
+
+  void _selectExperiment(ExperimentConfig config) {
+    if (_config.type == config.type) return;
+    setState(() {
+      _config = config;
+      _isRunning = false;
+      _result = _run();
     });
   }
 
   void _updateParams(SimulationParams params) {
     setState(() {
       _params = params;
-      // Controls always change the displayed circuit response. When the
-      // scope is running, the new response is picked up by the live trace.
       _result = _run();
-      _saveMessage = null;
     });
   }
 
-  Future<void> _saveRun() async {
-    final token = context.read<AuthProvider>().token;
-    if (token == null) {
-      setState(() {
-        _saveMessage = 'Could not save: you are not logged in.';
-      });
-      return;
-    }
-
+  void _resetSimulation() {
     setState(() {
-      _isSaving = true;
-      _saveMessage = null;
+      _params = SimulationParams.defaults;
+      _isRunning = false;
+      _result = _run();
     });
-
-    final session = ExperimentSession(
-      id: null,
-      experimentType: widget.config.apiValue,
-      waveformType: _params.waveform.name,
-      resistanceOhm: _params.resistanceOhm,
-      capacitanceF: _params.capacitanceF,
-      amplitudeV: _params.amplitudeV,
-      frequencyHz: _params.frequencyHz,
-      notes: null,
-      createdAt: null,
-    );
-
-    try {
-      await ExperimentService().saveSession(
-        token: token,
-        session: session,
-      );
-      if (mounted) {
-        setState(() {
-          _saveMessage = 'Run saved successfully.';
-        });
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        setState(() {
-          _saveMessage = 'Save failed: ${e.message}';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
   }
 
   Widget _content() {
@@ -128,11 +85,11 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
         children: [
           WaveformChart(result: _result, isRunning: _isRunning),
           ResultsSummary(result: _result, params: _params),
-          if (widget.config.type == LabExperiment.differentiator)
+          if (_config.type == LabExperiment.differentiator)
             const DifferentiatorCircuitDiagram()
           else
             const IntegratorCircuitDiagram(),
-          InfoSection(config: widget.config),
+          InfoSection(config: _config),
         ],
       ),
     );
@@ -143,10 +100,8 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
       params: _params,
       onChanged: _updateParams,
       onRunPressed: _toggleSimulation,
+      onResetPressed: _resetSimulation,
       isRunning: _isRunning,
-      onSavePressed: _saveRun,
-      isSaving: _isSaving,
-      saveMessage: _saveMessage,
     );
   }
 
@@ -212,7 +167,30 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.config.title)),
+      appBar: AppBar(
+        title: Text(_config.title),
+        actions: [
+          PopupMenuButton<LabExperiment>(
+            tooltip: 'Choose experiment',
+            icon: const Icon(Icons.swap_horiz),
+            onSelected: (experiment) => _selectExperiment(
+              experiment == LabExperiment.differentiator
+                  ? ExperimentConfig.differentiator
+                  : ExperimentConfig.integrator,
+            ),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: LabExperiment.differentiator,
+                child: Text('Differentiator'),
+              ),
+              PopupMenuItem(
+                value: LabExperiment.integrator,
+                child: Text('Integrator'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 900) {
@@ -227,10 +205,8 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
                       params: _params,
                       onChanged: _updateParams,
                       onRunPressed: _toggleSimulation,
+                      onResetPressed: _resetSimulation,
                       isRunning: _isRunning,
-                      onSavePressed: _saveRun,
-                      isSaving: _isSaving,
-                      saveMessage: _saveMessage,
                     ),
                   ),
                 ),

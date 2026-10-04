@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'screens/dashboard_screen.dart';
-import 'screens/login_screen.dart';
-import 'services/auth_provider.dart';
+import 'logic/experiment_config.dart';
+import 'screens/experiment_screen.dart';
 import 'theme/app_theme.dart';
 
 class OpAmpLabApp extends StatelessWidget {
@@ -15,26 +13,9 @@ class OpAmpLabApp extends StatelessWidget {
       title: 'Op-Amp Virtual Lab',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const AuthGate(),
+      home: const ExperimentScreen(
+        config: ExperimentConfig.differentiator,
+      ),
     );
-  }
-}
-
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-
-    if (!auth.initialized) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return auth.isAuthenticated
-        ? const DashboardScreen()
-        : const LoginScreen();
   }
 }

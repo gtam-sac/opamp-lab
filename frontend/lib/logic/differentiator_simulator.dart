@@ -11,8 +11,13 @@ class DifferentiatorSimulator {
     required double resistanceOhm,
     required double capacitanceF,
   }) {
-    final time =
-        WaveformGenerator.generateTimeAxis(frequencyHz: frequencyHz);
+    WaveformGenerator.validateSimulationParameters(
+      amplitudeV: amplitudeV,
+      frequencyHz: frequencyHz,
+      resistanceOhm: resistanceOhm,
+      capacitanceF: capacitanceF,
+    );
+    final time = WaveformGenerator.generateTimeAxis(frequencyHz: frequencyHz);
     final vin = time
         .map(
           (t) => WaveformGenerator.valueAt(
@@ -27,22 +32,22 @@ class DifferentiatorSimulator {
     final rc = resistanceOhm * capacitanceF;
     final n = time.length;
     final vout = List<double>.filled(n, 0);
-
-    for (int i = 1; i < n; i++) {
-      final dt = time[i] - time[i - 1];
-      vout[i] = -rc * (vin[i] - vin[i - 1]) / dt;
-    }
-    vout[0] = n > 1 ? vout[1] : 0;
+    final dt = time[1] - time[0];
 
     for (int i = 0; i < n; i++) {
-      vout[i] = vout[i].clamp(
-        -kOpAmpSaturationVoltage,
-        kOpAmpSaturationVoltage,
-      );
+      final previousIndex = i == 0 ? n - 1 : i - 1;
+      final derivative = (vin[i] - vin[previousIndex]) / dt;
+      vout[i] = -rc * derivative;
     }
 
-    final peak =
-        vout.fold<double>(0, (p, v) => math.max(p, v.abs()));
+    // Apply the ideal op-amp output limit after the derivative is computed.
+    for (int i = 0; i < n; i++) {
+      vout[i] = vout[i]
+          .clamp(-kOpAmpSaturationVoltage, kOpAmpSaturationVoltage)
+          .toDouble();
+    }
+
+    final peak = vout.fold<double>(0, (p, v) => math.max(p, v.abs()));
 
     return SimulationResult(
       time: time,
