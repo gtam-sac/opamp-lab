@@ -43,6 +43,33 @@ void main() {
     expect(find.text('Sign up'), findsNothing);
   });
 
+  testWidgets('Circuit diagrams paint within a mobile-width card',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final isDifferentiator in [true, false]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 340,
+                child: CircuitDiagram(isDifferentiator: isDifferentiator),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircuitDiagram), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('Waveforms, parameter controls, and reset remain available',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 900);

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class DifferentiatorCircuitDiagram extends StatelessWidget {
@@ -85,8 +87,8 @@ class _CircuitPainter extends CustomPainter {
 
     final unit = Offset(direction.dx / length, direction.dy / length);
     final normal = Offset(-unit.dy, unit.dx);
-    const lead = 12.0;
-    const amplitude = 7.0;
+    final lead = math.min(12.0, length * 0.15);
+    final amplitude = math.min(7.0, length * 0.12);
     const zigzags = 6;
     final points = <Offset>[p1 + unit * lead];
     final step = (length - 2 * lead) / (zigzags * 2);
@@ -201,17 +203,21 @@ class _CircuitPainter extends CustomPainter {
     final width = size.width;
     final height = size.height;
 
-    final minus = Offset(width * 0.48, height * 0.48);
-    final plus = Offset(width * 0.48, height * 0.64);
+    final componentLength = (width * 0.14).clamp(70.0, 110.0).toDouble();
+    final minus = Offset(width * 0.47, height * 0.48);
+    final plus = Offset(minus.dx, height * 0.64);
     final output = Offset(width * 0.76, height * 0.56);
     final outputNode = Offset(width * 0.86, output.dy);
     final inputStart = Offset(width * 0.04, minus.dy);
     final inputComponentStart = Offset(width * 0.20, minus.dy);
-    final inputComponentEnd = Offset(width * 0.34, minus.dy);
+    final inputComponentEnd =
+        Offset(inputComponentStart.dx + componentLength, minus.dy);
     final feedbackY = height * 0.18;
-    final feedbackComponentStart = Offset(width * 0.58, feedbackY);
-    final feedbackComponentEnd = Offset(width * 0.70, feedbackY);
-    final groundPoint = Offset(width * 0.48, plus.dy + 0.10 * height);
+    final feedbackComponentStart = Offset(width * 0.57, feedbackY);
+    final feedbackComponentEnd =
+        Offset(feedbackComponentStart.dx + componentLength, feedbackY);
+    final groundX = minus.dx - 34;
+    final groundPoint = Offset(groundX, height * 0.78);
     final outputEnd = Offset(width * 0.96, output.dy);
     final opRect = Rect.fromLTRB(
       minus.dx,
@@ -301,8 +307,13 @@ class _CircuitPainter extends CustomPainter {
       );
       _drawLabel(canvas, 'C', capacitorMid + const Offset(-5, -34));
     }
-    canvas.drawLine(feedbackComponentEnd, Offset(feedbackComponentEnd.dx, output.dy), _stroke);
-    canvas.drawLine(Offset(feedbackComponentEnd.dx, output.dy), output, _stroke);
+    canvas.drawLine(
+        feedbackComponentEnd, Offset(outputNode.dx, feedbackY), _stroke);
+    canvas.drawLine(
+      Offset(outputNode.dx, feedbackY),
+      outputNode,
+      _stroke,
+    );
 
     // Output lead and label.
     canvas.drawLine(output, outputNode, _stroke);
@@ -313,9 +324,11 @@ class _CircuitPainter extends CustomPainter {
     _drawOpAmp(canvas, opRect);
 
     // Non-inverting input is referenced to ground.
-    canvas.drawLine(plus, groundPoint, _stroke);
+    final groundBranch = Offset(groundX, plus.dy);
+    canvas.drawLine(plus, groundBranch, _stroke);
+    canvas.drawLine(groundBranch, groundPoint, _stroke);
     _drawGroundSymbol(canvas, groundPoint, _stroke);
-    _drawLabel(canvas, 'GND', groundPoint + const Offset(-18, 48));
+    _drawLabel(canvas, 'GND', groundPoint + const Offset(-18, 38));
     _drawLabel(
       canvas,
       isDifferentiator ? 'Differentiator' : 'Integrator',
