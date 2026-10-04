@@ -57,9 +57,13 @@ flutter build web --release
 
 The static web app is generated under `frontend/build/web/`.
 
-## Legacy backend and database
+## Docker deployment
 
-The `backend/` and `database/` directories contain the previous Express/MySQL
-authentication and saved-history implementation. The current Flutter lab does
-not call those APIs; they are not needed to run or build the lab. The app no
-longer has login, signup, JWT handling, or server-backed experiment history.
+The project is a standalone Flutter web app. No backend, database, account, or
+API is required. To run it in Docker, use the root `Dockerfile`:
+
+```powershell
+docker compose up --build
+```
+
+Then open `http://localhost:8080`.

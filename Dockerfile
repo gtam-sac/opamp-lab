@@ -7,8 +7,7 @@ RUN flutter pub get
 
 COPY frontend/ .
 
-ARG API_BASE_URL
-RUN flutter build web --release --dart-define=API_BASE_URL=${API_BASE_URL}
+RUN flutter build web --release
 
 FROM nginx:alpine
 
